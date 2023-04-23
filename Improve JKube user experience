@@ -1,0 +1,530 @@
+Google summer of code 
+Krishan kant
+I am student passionate about coding and would be very grateful if selected for gsoc.
+Kantkrishan0205@gmail.com
+Nsut student
+Github- https://github.com/Krishancse
+ Improve JKube user experience
+Description Eclipse JKube™ is a collection of plugins and libraries that are used for building container images using Docker, JIB or S2I build strategies. Eclipse JKube generates and deploys Kubernetes/OpenShift manifests at compile time too.
+This project focuses on providing compile-time plugins and libraries for the Java ecosystem for:
+•	Building container images
+•	Creating Kubernetes and OpenShift resource descriptors
+•	Deploying resources descriptors
+The goal of this proposal is to improve the user experience of JKube for a better adoption. Basically to work on the issues with the label ‘UX’ https://github.com/eclipse/jkube/labels/UX . Students could also propose issues that would help JKube to be well/better adopted.
+Expected outcomes are of course contributions in terms of code. But it could also involve the website or the documentation or videos.
+Skills required/preferred.
+•	Basic knowledge of Kubernetes
+•	Good knowledge of Java
+Project size 350
+Possible mentors: Sun Tan (CET/CEST)
+Rating medium
+
+
+
+Description about jkube
+It has been 25 years since developers started adopting Java technology and making it part of their core application stack. Today, many Java developers and Java-based shops are migrating or looking to migrate their infrastructure to Kubernetes, or to related distributions like Red Hat OpenShift and Amazon EKS.
+Kubernetes has a steep learning curve, however, and it adds an additional layer of operations to the familiar Java development workflow. In this article, I introduce Eclipse JKube and show you how to use it to simplify the Kubernetes workflow. As you'll see, Eclipse JKube provides a migration path to Kubernetes while letting you stay within the familiar Java ecosystem. I will also quickly show you how to deploy a Java application to OpenShift using OpenShift Maven plugin.
+The traditional Java development workflow
+In a traditional Java workflow, shown in Figure 1, a Java developer writes code, creates deployment units in the form of JAR or WAR files, and deploys and runs these files in a web server or application server. Developers mostly use Maven from the command line or use an IDE such as IntelliJ or Eclipse to code and package their applications. Developers are accustomed to making changes to their code and trying things out before committing and pushing the code to a version control system.
+ 
+The cloud-native Java development workflow
+When we start writing cloud-native applications, Kubernetes and containers come into the picture. As developers, we are expected to package our Java applications into images and write Kubernetes manifests referencing those images. The manifests are then applied to the production server, which is running Kubernetes. Kubernetes pulls the images from the image registry and deploys applications based on the configuration we've provided in our manifests, which are typically YAML files.
+Figure 2 shows how the traditional Java development workflow changes in a cloud-native environment.
+ 
+Eclipse JKube
+Adopting Kubernetes adds a new operations layer to the overall workflow, and that is troublesome for many developers. We want to focus on the application's logic, not how the application is deployed. Here is the point where Eclipse JKube enters the picture. As a developer, you can use JKube's libraries and plugins—JKube Kit along with the Kubernetes Maven Plugin or the OpenShift Maven Plugin—to easily handle the Kubernetes and container operations outlined in Figure 2.
+In the rest of this article, you will learn how to use Eclipse JKube with the Kubernetes Maven Plugin to simplify the Java development workflow on top of Kubernetes.
+Eclipse JKube in the cloud-native development workflow
+Let's consider a modified version of the cloud-native Java development workflow from Figure 2. Figure 3 shows that workflow after we've integrated Eclipse JKube and the Kubernetes Maven Plugin.
+ 
+In this workflow, all of the operations that require engaging with Kubernetes or a container (highlighted in red) are replaced by the default Eclipse JKube goals. Table 1 offers a closer look at these goals.
+
+Table 1: Default Eclipse JKube goals.
+Goal	Phase	Description
+k8s:build
+PRE_INTEGRATION_TEST	Build docker images.
+k8s:push
+INSTALL	Push docker images to the registry.
+k8s:resource
+PROCESS_RESOURCES	Generate K8s manifests.
+k8s:apply
+COMPILE	Apply the generated manifests to K8s.
+k8s:undeploy
+UNDEPLOY	Delete K8s resources that were deployed via k8s:apply and k8s:deploy.
+Deploying a Java application onto Kubernetes with Eclipse JKube
+In this example, we will deploy a simple Java application onto a Minikube cluster using Eclipse JKube. Using the Kubernetes Maven Plugin, we can set up the deployment without providing any configuration.
+For our example application, we'll use a simple random number generation application. This application prints JSON output on a /random endpoint, like this:
+~/work/repos/eclipse-jkube-demo-project : $ curl localhost:8080/random | jq .
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100    45    0    45    0     0    818      0 --:--:-- --:--:-- --:--:--   818
+{
+  "id": "e80a4d10-c79b-4b9a-aaac-7c286cb37f3c"
+}
+Step 1: Get the Kubernetes Maven Plugin
+The Kubernetes Maven Plugin is available from the Maven Central Repository. To start using Eclipse JKube, you need to add the Kubernetes Maven Plugin as a dependency in your pom.xml, as shown here:
+<plugin>
+     <groupId>org.eclipse.jkube</groupId>
+     <artifactId>kubernetes-maven-plugin</artifactId>
+     <version>${jkube.version}</version>
+ </plugin>
+If you are running the OpenShift version of Kubernetes, you will update your pom.xml as follows:
+<plugin>
+     <groupId>org.eclipse.jkube</groupId>
+     <artifactId>openshift-maven-plugin</artifactId>
+     <version>${jkube.version}</version>
+ </plugin>
+Step 2: Build the docker image
+You can build your application JAR using the mvn package command, then you can use the mvn k8s:build goal to build a docker image of your application. Note that I am overriding the default image name via this property:
+<jkube.generator.name>docker.io/rohankanojia/random-generator:${project.version}</jkube.generator.name>
+Before building an image, you need to make sure that you have exposed your docker daemon correctly. The command to expose the docker daemon is:
+$ eval $(minikube docker-env)
+Next, you enter the goal, mvn k8s:build. Here is the output for building the docker image with the Eclipse JKube build goal:
+~/work/repos/eclipse-jkube-demo-project : $ mvn k8s:build
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] ----------------------< meetup:random-generator >-----------------------
+[INFO] Building random-generator 0.0.1
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- kubernetes-maven-plugin:1.0.0:build (default-cli) @ random-generator ---
+[INFO] k8s: Running in Kubernetes mode
+[INFO] k8s: Building Docker image in Kubernetes mode
+[INFO] k8s: Running generator spring-boot
+[INFO] k8s: spring-boot: Using Docker image quay.io/jkube/jkube-java-binary-s2i:0.0.7 as base / builder
+[INFO] k8s: [docker.io/rohankanojia/random-generator:0.0.1] "spring-boot": Created docker-build.tar in 251 milliseconds
+[INFO] k8s: [docker.io/rohankanojia/random-generator:0.0.1] "spring-boot": Built image sha256:a20e5
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  5.053 s
+[INFO] Finished at: 2020-08-10T11:28:23+05:30
+[INFO] ------------------------------------------------------------------------
+~/work/repos/eclipse-jkube-demo-project : $
+Step 3: Push the image to your docker registry
+Once you've built your docker image with your push registry configured (docker.io, in my case), you can push the image to the registry. Here is the output after entering the Eclipse JKube push goal, mvn k8s:push:
+~/work/repos/eclipse-jkube-demo-project : $ mvn k8s:push
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] ----------------------< meetup:random-generator >-----------------------
+[INFO] Building random-generator 0.0.1
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- kubernetes-maven-plugin:1.0.0:push (default-cli) @ random-generator ---
+[INFO] k8s: Running in Kubernetes mode
+[INFO] k8s: Building Docker image in Kubernetes mode
+[INFO] k8s: Running generator spring-boot
+[INFO] k8s: spring-boot: Using Docker image quay.io/jkube/jkube-java-binary-s2i:0.0.7 as base / builder
+[INFO] k8s: The push refers to repository [docker.io/rohankanojia/random-generator]
+5dcd9556710f: Layer already exists 
+b7139ad07aa8: Layer already exists 
+b6f081e4b2b6: Layer already exists 
+d8e1f35641ac: Layer already exists 
+[INFO] k8s: 0.0.1: digest: sha256:9f9eda2a13b8cab1d2c9e474248500145fc09e2922fe3735692f9bda4c76002d size: 1162
+[INFO] k8s: Pushed docker.io/rohankanojia/random-generator:0.0.1 in 7 seconds 
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  11.222 s
+[INFO] Finished at: 2020-08-10T11:35:37+05:30
+[INFO] ------------------------------------------------------------------------
+~/work/repos/eclipse-jkube-demo-project : $ 
+After pushing the image, you can confirm that it was pushed to the specified image registry. In my case, I was able to see my pushed image on Docker Hub, as shown in Figure 4.
+ 
+Figure 4: The pushed image is available on Docker Hub.
+Step 4: Generate the Kubernetes resource manifests for your application
+After you've built the application image, the next thing to do is to write the Kubernetes manifests. Eclipse JKube provides a goal for generating opinionated resource manifests based on the underlying Java framework, which could be Spring Boot, Quarkus, Vert.x, or some other framework. Another option is to configure the manifest using an XML configuration file and provide raw fragments (a portion of the desired resource manifest) in the application's src/main/jkube folder. Your configuration would then be merged into the generated manifests.
+For this application, we will let Eclipse JKube generate a manifest for a default deployment and a service of type ClusterIP. Next, we'll customize the service manifest for a Service of type NodePort. Setting the following property overrides the default behavior:
+<jkube.enricher.jkube-service.type>NodePort</jkube.enricher.jkube-service.type>
+Here is the output from entering the Eclipse JKube resource goal, mvn k8s:resource.
+~/work/repos/eclipse-jkube-demo-project : $ mvn k8s:resource
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] ----------------------< meetup:random-generator >-----------------------
+[INFO] Building random-generator 0.0.1
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- kubernetes-maven-plugin:1.0.0:resource (default-cli) @ random-generator ---
+[INFO] k8s: Running generator spring-boot
+[INFO] k8s: spring-boot: Using Docker image quay.io/jkube/jkube-java-binary-s2i:0.0.7 as base / builder
+[INFO] k8s: jkube-controller: Adding a default Deployment
+[INFO] k8s: jkube-service: Adding a default service 'random-generator' with ports [8080]
+[INFO] k8s: jkube-healthcheck-spring-boot: Adding readiness probe on port 8080, path='/actuator/health', scheme='HTTP', with initial delay 10 seconds
+[INFO] k8s: jkube-healthcheck-spring-boot: Adding liveness probe on port 8080, path='/actuator/health', scheme='HTTP', with initial delay 180 seconds
+[INFO] k8s: jkube-revision-history: Adding revision history limit to 2
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  3.344 s
+[INFO] Finished at: 2020-08-10T11:38:11+05:30
+[INFO] ------------------------------------------------------------------------
+~/work/repos/eclipse-jkube-demo-project : $ ls target/classes/META-INF/jkube/kubernetes
+random-generator-deployment.yml  random-generator-service.yml
+~/work/repos/eclipse-jkube-demo-project : $ cat target/classes/META-INF/jkube/kubernetes/random-generator-deployment.yml | head -n10
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    jkube.io/git-url: git@github.com:rohanKanojia/eclipse-jkube-demo-project.git
+    jkube.io/git-commit: 1ef9ef2ef7a6fcbf8eb64c293f26f9c42d026512
+    jkube.io/git-branch: master
+    jkube.io/scm-url: https://github.com/spring-projects/spring-boot/spring-boot-starter-parent/random-generator
+    jkube.io/scm-tag: HEAD
+~/work/repos/eclipse-jkube-demo-project : $
+Step 5: Deploy your application in a Kubernetes cluster
+Everything is now set up for the example application. We were able to generate the image for the application, and then automatically generate the resource manifests. Now, we only need to apply these artifacts onto a Kubernetes cluster. You could use kubectl apply -f to deploy the application; however, the plugin also takes care of this for you. Here is the output after entering the Eclipse JKube apply goal, mvn k8s:apply:
+~/work/repos/eclipse-jkube-demo-project : $ mvn k8s:apply
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] ----------------------< meetup:random-generator >-----------------------
+[INFO] Building random-generator 0.0.1
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- kubernetes-maven-plugin:1.0.0:apply (default-cli) @ random-generator ---
+[INFO] k8s: Using Kubernetes at https://192.168.39.145:8443/ in namespace default with manifest /home/rohaan/work/repos/eclipse-jkube-demo-project/target/classes/META-INF/jkube/kubernetes.yml 
+[INFO] k8s: Using namespace: default
+[INFO] k8s: Creating a Service from kubernetes.yml namespace default name random-generator
+[INFO] k8s: Created Service: target/jkube/applyJson/default/service-random-generator.json
+[INFO] k8s: Creating a Deployment from kubernetes.yml namespace default name random-generator
+[INFO] k8s: Created Deployment: target/jkube/applyJson/default/deployment-random-generator.json
+[INFO] k8s: HINT: Use the command `kubectl get pods -w` to watch your pods start up
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  7.306 s
+[INFO] Finished at: 2020-08-10T11:40:57+05:30
+[INFO] ------------------------------------------------------------------------
+~/work/repos/eclipse-jkube-demo-project : $ kubectl get pods -w
+NAME                                                     READY   STATUS             RESTARTS   AGE
+random-generator-58b7847d7f-9m9df                        0/1     Running            0          7s
+random-generator-58b7847d7f-9m9df                        1/1     Running            0          17s
+^C~/work/repos/eclipse-jkube-demo-project : $ kubectl get svc
+NAME                                    TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)           AGE
+io-openliberty-sample-getting-started   NodePort    10.110.4.104    <none>        9080:30570/TCP    44h
+kubernetes                              ClusterIP   10.96.0.1       <none>        443/TCP           18d
+random-generator                        NodePort    10.97.172.147   <none>        8080:32186/TCP    22s
+~/work/repos/eclipse-jkube-demo-project : $ curl `minikube ip`:32186/random | jq .
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100    45    0    45    0     0   1800      0 --:--:-- --:--:-- --:--:--  1875
+{
+  "id": "42e5571f-a20f-44b3-8184-370356581d10"
+}
+Step 6: Undeploy an application from the Kubernetes cluster
+The undeploy goal is the opposite of the apply goal. It just deletes all of the resources applied during the apply phase. Here is the output after initiating Eclipse JKube undeploy goal, mvn k8s:undeploy:
+~/work/repos/eclipse-jkube-demo-project : $ kubectl get all
+NAME                                    READY   STATUS    RESTARTS   AGE
+pod/random-generator-58b7847d7f-9m9df   1/1     Running   0          5m21s
+
+NAME                       TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)          AGE
+service/kubernetes         ClusterIP   10.96.0.1       <none>        443/TCP          18d
+service/random-generator   NodePort    10.97.172.147   <none>        8080:32186/TCP   5m21s
+
+NAME                               READY   UP-TO-DATE   AVAILABLE   AGE
+deployment.apps/random-generator   1/1     1            1           5m21s
+
+NAME                                          DESIRED   CURRENT   READY   AGE
+replicaset.apps/random-generator-58b7847d7f   1         1         1       5m21s
+~/work/repos/eclipse-jkube-demo-project : $ mvn k8s:undeploy
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] ----------------------< meetup:random-generator >-----------------------
+[INFO] Building random-generator 0.0.1
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- kubernetes-maven-plugin:1.0.0:undeploy (default-cli) @ random-generator ---
+[INFO] k8s: Using Kubernetes at https://192.168.39.145:8443/ in namespace default with manifest /home/rohaan/work/repos/eclipse-jkube-demo-project/target/classes/META-INF/jkube/kubernetes.yml 
+[INFO] k8s: Using namespace: default
+[INFO] k8s: Deleting resource Deployment default/random-generator
+[INFO] k8s: Deleting resource Service default/random-generator
+[INFO] k8s: HINT: Use the command `kubectl get pods -w` to watch your pods start up
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  3.412 s
+[INFO] Finished at: 2020-08-10T11:46:22+05:30
+[INFO] ------------------------------------------------------------------------
+~/work/repos/eclipse-jkube-demo-project : $ kubectl get pods -w
+^C~/work/repos/eclipse-jkube-demo-project : $ kubectl get all
+NAME                 TYPE        CLUSTER-IP   EXTERNAL-IP   PORT(S)   AGE
+service/kubernetes   ClusterIP   10.96.0.1    <none>        443/TCP   18d
+~/work/repos/eclipse-jkube-demo-project : $
+Do more with Eclipse JKube
+We've covered the core goals provided by Eclipse JKube and the Kubernetes Maven Plugin. You can use these goals to ease your Java application development workflow on top of Kubernetes. If you don't like typing the goals repeatedly, you could simplify by adding a specified execution in the plugin configuration, like this:
+<plugin>
+     <groupId>org.eclipse.jkube</groupId>
+     <artifactId>kubernetes-maven-plugin</artifactId>
+     <version>${project.version}</version>
+     <executions>
+         <execution>
+             <goals>
+                  <goal>build</goal>
+                  <goal>resource</goal>
+                  <goal>apply</goal>
+             </goals>
+         </execution>
+     </executions>
+</plugin>
+I haven't covered all of the goals provided by Eclipse JKube and the Kubernetes Maven Plugin. Table 2 shows additional goals, which you could explore on your own.
+Table 2: Additional Eclipse JKube goals.
+Goal	Phase	Description
+k8s:log
+VALIDATE	Get the logs from your application running inside of Kubernetes.
+k8s:debug
+PACKAGE	Open the debug port so that you can debug an application running inside Kubernetes from your IDE.
+k8s:deploy
+INSTALL	Fork the Install goal and apply your generated manifests onto a Kubernetes cluster, just like the Apply goal.
+k8s:watch
+PACKAGE	Do an automatic hot deployment of your application by watching your application workspace.
+Deploying Java applications to Red Hat OpenShift using OpenShift Maven Plugin
+You can use the OpenShift Maven plugin to deploy the same application on Red Hat OpenShift. The only difference would be that the k8s goal prefix would be replaced by the oc goal prefix. The Kubernetes Maven plugin does docker builds by default, and the OpenShift Maven Plugin does S2I builds by default. I haven't made any changes in my project apart from removing the property jkube.generator.name since I won't be needing it for push (OpenShift pushes the image to its internal registry during the build phase). Here is an example, but instead of running one goal separately, I will deploy all of the resources and goals at once:
+~/work/repos/eclipse-jkube-demo-project : $ mvn oc:build oc:resource oc:apply
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] ----------------------< meetup:random-generator >-----------------------
+[INFO] Building random-generator 0.0.1
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- openshift-maven-plugin:1.0.0:build (default-cli) @ random-generator ---
+[INFO] oc: Using OpenShift build with strategy S2I
+[INFO] oc: Running in OpenShift mode
+[INFO] oc: Running generator spring-boot
+[INFO] oc: spring-boot: Using Docker image quay.io/jkube/jkube-java-binary-s2i:0.0.7 as base / builder
+[INFO] oc: [random-generator:0.0.1] "spring-boot": Created docker source tar /home/rohaan/work/repos/eclipse-jkube-demo-project/target/docker/random-generator/0.0.1/tmp/docker-build.tar
+[INFO] oc: Adding to Secret pullsecret-jkube
+[INFO] oc: Using Secret pullsecret-jkube
+[INFO] oc: Creating BuildServiceConfig random-generator-s2i for Source build
+[INFO] oc: Creating ImageStream random-generator
+[INFO] oc: Starting Build random-generator-s2i
+[INFO] oc: Waiting for build random-generator-s2i-1 to complete...
+[INFO] oc: Caching blobs under "/var/cache/blobs".
+[INFO] oc: Getting image source signatures
+[INFO] oc: Copying blob sha256:cf0f3ebe9f536c782ab3835049cfbd9a663761ded9370791ef6ea3965c823aad
+[INFO] oc: Copying blob sha256:57de4da701b511cba33bbdc424757f7f3b408bea741ca714ace265da9b59191a
+[INFO] oc: Copying blob sha256:f320f94d91a064281f5127d5f49954b481062c7d56cce3b09910e471cf849050
+[INFO] oc: Copying config sha256:52d6788fcfdd39595264d34a3959464a5dabc1d4ef0ae188802b20fc2d6a857b
+[INFO] oc: Writing manifest to image destination
+[INFO] oc: Storing signatures
+[INFO] oc: Generating dockerfile with builder image quay.io/jkube/jkube-java-binary-s2i:0.0.7
+[INFO] oc: STEP 1: FROM quay.io/jkube/jkube-java-binary-s2i:0.0.7
+[INFO] oc: STEP 2: LABEL "io.openshift.build.source-location"="/tmp/build/inputs"       "io.openshift.build.image"="quay.io/jkube/jkube-java-binary-s2i:0.0.7"
+[INFO] oc: STEP 3: ENV JAVA_APP_DIR="/deployments"     OPENSHIFT_BUILD_NAME="random-generator-s2i-1"     OPENSHIFT_BUILD_NAMESPACE="default"
+[INFO] oc: STEP 4: USER root
+[INFO] oc: STEP 5: COPY upload/src /tmp/src
+[INFO] oc: STEP 6: RUN chown -R 1000:0 /tmp/src
+[INFO] oc: STEP 7: USER 1000
+[INFO] oc: STEP 8: RUN /usr/local/s2i/assemble
+[INFO] oc: INFO S2I source build with plain binaries detected
+[INFO] oc: INFO S2I binary build from fabric8-maven-plugin detected
+[INFO] oc: INFO Copying binaries from /tmp/src/deployments to /deployments ...
+[INFO] oc: random-generator-0.0.1.jar
+[INFO] oc: INFO Copying deployments from deployments to /deployments...
+[INFO] oc: '/tmp/src/deployments/random-generator-0.0.1.jar' -> '/deployments/random-generator-0.0.1.jar'
+[INFO] oc: STEP 9: CMD /usr/local/s2i/run
+[INFO] oc: STEP 10: COMMIT temp.builder.openshift.io/default/random-generator-s2i-1:48795e41
+[INFO] oc: time="2020-08-10T06:37:49Z" level=info msg="Image operating system mismatch: image uses \"\", expecting \"linux\""
+[INFO] oc: time="2020-08-10T06:37:49Z" level=info msg="Image architecture mismatch: image uses \"\", expecting \"amd64\""
+[INFO] oc: Getting image source signatures
+[INFO] oc: Copying blob sha256:d8e1f35641acb80b562f70cf49911341dfbe8c86f4d522b18efbf3732aa74223
+[INFO] oc: Copying blob sha256:b6f081e4b2b6de8be4b1dec132043d14c121e968384dd624fb69c2c07b482edb
+[INFO] oc: Copying blob sha256:b7139ad07aa8ce4ed5a132f7c5cc9f1de0f5099b5e155027a23d57f7fbe78b16
+[INFO] oc: Copying blob sha256:98972fc90a1108315cc5b05b2c691a0849a149727a7b81e76bc847ac2c6d9714
+[INFO] oc: Copying config sha256:27aaadaf28e24856a66db962b88118b8222b61d79163dceeeed869f7289bc230
+[INFO] oc: Writing manifest to image destination
+[INFO] oc: Storing signatures
+[INFO] oc: --> 27aaadaf28e
+[INFO] oc: 27aaadaf28e24856a66db962b88118b8222b61d79163dceeeed869f7289bc230
+[INFO] oc: Getting image source signatures
+[INFO] oc: 
+[INFO] oc: Pushing image image-registry.openshift-image-registry.svc:5000/default/random-generator:0.0.1 ...
+[INFO] oc: Copying blob sha256:f320f94d91a064281f5127d5f49954b481062c7d56cce3b09910e471cf849050
+[INFO] oc: Copying blob sha256:cf0f3ebe9f536c782ab3835049cfbd9a663761ded9370791ef6ea3965c823aad
+[INFO] oc: Copying blob sha256:57de4da701b511cba33bbdc424757f7f3b408bea741ca714ace265da9b59191a
+[INFO] oc: Copying blob sha256:98972fc90a1108315cc5b05b2c691a0849a149727a7b81e76bc847ac2c6d9714
+[INFO] oc: Copying config sha256:27aaadaf28e24856a66db962b88118b8222b61d79163dceeeed869f7289bc230
+[INFO] oc: Writing manifest to image destination
+[INFO] oc: Storing signatures
+[INFO] oc: Successfully pushed image-registry.openshift-image-registry.svc:5000/default/random-generator@sha256:aa9e1a380c04ef9174ba56459c13d44420ebe653ebf32884d60fe4306b17306d
+[INFO] oc: Push successful
+[INFO] oc: Build random-generator-s2i-1 in status Complete
+[INFO] oc: Found tag on ImageStream random-generator tag: sha256:aa9e1a380c04ef9174ba56459c13d44420ebe653ebf32884d60fe4306b17306d
+[INFO] oc: ImageStream random-generator written to /home/rohaan/work/repos/eclipse-jkube-demo-project/target/random-generator-is.yml
+[INFO] 
+[INFO] --- openshift-maven-plugin:1.0.0:resource (default-cli) @ random-generator ---
+[INFO] oc: Using docker image name of namespace: default
+[INFO] oc: Running generator spring-boot
+[INFO] oc: spring-boot: Using Docker image quay.io/jkube/jkube-java-binary-s2i:0.0.7 as base / builder
+[INFO] oc: jkube-controller: Adding a default DeploymentConfig
+[INFO] oc: jkube-service: Adding a default service 'random-generator' with ports [8080]
+[INFO] oc: jkube-healthcheck-spring-boot: Adding readiness probe on port 8080, path='/actuator/health', scheme='HTTP', with initial delay 10 seconds
+[INFO] oc: jkube-healthcheck-spring-boot: Adding liveness probe on port 8080, path='/actuator/health', scheme='HTTP', with initial delay 180 seconds
+[INFO] oc: jkube-revision-history: Adding revision history limit to 2
+[INFO] 
+[INFO] --- openshift-maven-plugin:1.0.0:apply (default-cli) @ random-generator ---
+[INFO] oc: Using OpenShift at https://api.crc.testing:6443/ in namespace default with manifest /home/rohaan/work/repos/eclipse-jkube-demo-project/target/classes/META-INF/jkube/openshift.yml 
+[INFO] oc: OpenShift platform detected
+[INFO] oc: Using project: default
+[INFO] oc: Creating a Service from openshift.yml namespace default name random-generator
+[INFO] oc: Created Service: target/jkube/applyJson/default/service-random-generator.json
+[INFO] oc: Creating a DeploymentConfig from openshift.yml namespace default name random-generator
+[INFO] oc: Created DeploymentConfig: target/jkube/applyJson/default/deploymentconfig-random-generator.json
+[INFO] oc: Creating Route default:random-generator host: null
+[INFO] oc: HINT: Use the command `oc get pods -w` to watch your pods start up
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  01:07 min
+[INFO] Finished at: 2020-08-10T12:08:00+05:30
+[INFO] ------------------------------------------------------------------------
+~/work/repos/eclipse-jkube-demo-project : $ oc get pods -w
+NAME                           READY     STATUS      RESTARTS   AGE
+random-generator-1-deploy      1/1       Running     0          14s
+random-generator-1-vnrm9       0/1       Running     0          11s
+random-generator-s2i-1-build   0/1       Completed   0          1m
+random-generator-1-vnrm9   1/1       Running   0         24s
+random-generator-1-deploy   0/1       Completed   0         28s
+~/work/repos/eclipse-jkube-demo-project : $ oc get routes
+NAME                HOST/PORT                                    PATH      SERVICES            PORT      TERMINATION   WILDCARD
+random-generator    random-generator-default.apps-crc.testing              random-generator    8080                    None
+~/work/repos/eclipse-jkube-demo-project : $ curl random-generator-default.apps-crc.testing/random 
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100    45    0    45    0     0   1666      0 --:--:-- --:--:-- --:--:--  1730
+{
+  "id": "d80052d9-2f92-43cb-b9eb-d7cffb879798"
+}
+~/work/repos/eclipse-jkube-demo-project : $
+Watch a video demonstration
+For more about simplifying Kubernetes development with Eclipse JKube, watch this demonstration video. You'll learn how to quickly deploy a simple Spring Boot application onto Minikube:
+Conclusion
+In this article, I showed you how to use Eclipse JKube to simplify your Kubernetes workloads. You can visit the Eclipse JKube project website to learn more about this collection. If you like Eclipse JKube, please support us by spreading the word about it on. You can also watch and star the Eclipse JKube project on GitHub.
+What I will do
+jkube-service breaks service resource generation when a provided service.yml already contains a metadata.name
+
+
+Describe the bug
+Since 1.10.0, generating the service resource when a discovered service.yml is provided as base, fails when this resource has metadata.name in it. The error manifests in double creation of service.yml, with different names, and the resulting kubernetes.yml
+•	If enricher is disabled or enabled with defaults and no metadata.name is manually added to provided jkube/service.yml, it takes artifactId + '-service' for the service (metadata)name
+•	If enricher is disabled or enabled with defaults and metadata.name is manually added to provided jkube/service.yml, it creates 2 services descriptors/kinds, one for spring.app.name and one for provided service.yaml's metadata.name
+•	If enricher is enabled and has <jkube-name><name> configured and no metadata.name manually added to provided jkube/service.yml, it takes the configured jkube-service name correctly
+•	If enricher is enabled and has <jkube-name><name> configured and metadata.name is manually added to provided jkube/service.yml, it creates 2 services, one with configured <jkube-name><name> and another one with the same name and a suffix of "-1"
+When you need to have different names for service and deployment, different from the artifact, the only solution is disabling jkube-service enricher and provide metadata.name manually for both resources
+Eclipse JKube version
+1.12.0
+Component
+Kubernetes Maven Plugin
+Apache Maven version
+3.6.2
+Gradle version
+None
+Steps to reproduce
+Provide a service.yml with metadata.name different than the artifact and generate service.ymls. 2 service yamls are generated, one with metadata.name name and the other with spring.application.name
+Expected behavior
+Only one service descriptor is created, and IMO, preferably, metadata.name should be honoured before artifactId + '-service' and spring.application.name
+Runtime
+Kubernetes (vanilla)
+Kubernetes API Server version
+1.25.3
+Environment
+macOS
+Eclipse JKube Logs
+No response
+Sample Reproducer Project
+No response
+Additional context
+No response
+
+
+The resolve 
+if (hasServices(builder)) { 
+	     mergeInDefaultServiceParameters(builder, defaultService); 
+	 } else { 
+	     addDefaultService(builder, defaultService); 
+	 } 
+
+private boolean hasServices(KubernetesListBuilder builder) { 
+	     final AtomicBoolean hasService = new AtomicBoolean(false); 
+	     builder.accept(new TypedVisitor<ServiceBuilder>() { 
+	         @Override 
+	         public void visit(ServiceBuilder element) { 
+	            if (hasControllerMatchedService(element)) { 
+
+
+Solvation of the issue 
+Here's an example code snippet that might help address the issue you're facing:	
+apiVersion: v1
+kind: Service
+metadata:
+  name: my-service
+spec:
+  selector:
+    app: my-app
+  ports:
+    - name: http
+      port: 8080
+      targetPort: 8080
+      protocol: TCP
+In the above example, the service resource is defined with a specific metadata.name value of my-service. This value is used to uniquely identify the service within the Kubernetes cluster. However, when a discovered service.yml is provided as a base with the same metadata.name value, it can result in double creation of service.yml with different names.
+To avoid this issue, you can either remove the metadata.name value from the discovered service.yml or provide a different metadata.name value that is unique within the Kubernetes cluster.
+Additionally, you may want to check if there are any updates or fixes available for the software version you are using, as this issue might have been addressed in a later release.
+I hope this helps
+
+
+
+
+
+Timeline
+I will start working on project from 29 may
+Then I will merge the project in 29 august
+FUTURE WORK
+I want to work on ai with google.
+How I will do 
+Here's an example of how to use some popular compile-time plugins and libraries for the Java ecosystem to build container images, create Kubernetes and OpenShift resource descriptors, and deploy resources descriptors:
+1.	Building container images using Jib:
+Jib is a plugin that allows you to build container images for your Java application without needing to write a Docker file. Here's an example of how to use Jib with Maven:
+<build>
+  <plugins>
+    <plugin>
+      <groupId>com.google.cloud.tools</groupId>
+      <artifactId>jib-maven-plugin</artifactId>
+      <version>3.1.4</version>
+      <configuration>
+        <to>
+          <image>my-registry/my-image</image>
+        </to>
+      </configuration>
+    </plugin>
+  </plugins>
+</build>
+2.	Creating Kubernetes and OpenShift resource descriptors using Fabric8:
+Fabric8 is a library that provides an easy-to-use API for creating Kubernetes and OpenShift resource descriptors. Here's an example of how to use Fabric8 to create a Deployment descriptor:
+KubernetesClient client = new DefaultKubernetesClient();
+Deployment deployment = new DeploymentBuilder()
+  .withNewMetadata()
+    .withName("my-deployment")
+  .endMetadata()
+  .withNewSpec()
+    .withReplicas(1)
+    .withNewTemplate()
+      .withNewMetadata()
+        .withLabels(Collections.singletonMap("app", "my-app"))
+      .endMetadata()
+      .withNewSpec()
+        .addNewContainer()
+          .withName("my-container")
+          .withImage("my-registry/my-image")
+          .addNewPort()
+            .withContainerPort(8080)
+          .endPort()
+        .endContainer()
+      .endSpec()
+    .endTemplate()
+  .endSpec()
+  .build();
+client.apps().deployments().create(deployment);
+3.	Deploying resource descriptors using Kubernetes Client:
+Kubernetes Client is a library that provides an API for deploying Kubernetes resources from Java. Here's an example of how to use Kubernetes Client to deploy a Deployment descriptor:
+KubernetesClient client = new DefaultKubernetesClient();
+client.apps().deployments().inNamespace("my-namespace").createOrReplace(deployment);
+These examples should give you a good starting point for using compile-time plugins and libraries for building container images, creating Kubernetes and OpenShift resource descriptors, and deploying resource desc
